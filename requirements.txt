@@ -1,0 +1,6 @@
+torch
+onnxruntime
+platform
+snakemd
+numpy
+snakemd
