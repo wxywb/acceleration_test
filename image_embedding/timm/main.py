@@ -1,38 +1,16 @@
 import sys
 import towhee
-import ipdb
 
 sys.path.append('../../')
 import utils
 from utils import FormatTest, to_numpy 
 from torchvision import transforms
-import torch
-from torch import nn
 
-formalized_test= FormatTest('image_text_embedding', 'clip')
+formalized_test= FormatTest('image_embedding', 'timm')
 formalized_test.start_eval()
 
-# our clip implementation use the jit in default which could cause the failure for onnx.
-op = towhee.ops.image_text_embedding.clip(model_name='clip_vit_b32',modality='image').get_op()
-
-#sanity check begin
-model = op.model
-img = torch.randn(1,3,224,224) 
-
-class CLIPImageModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.model = model
-
-    def forward(self, img):
-        out = self.model.encode_image(img)
-        return out
-#sanity check end
-ipdb.set_trace()
-img_model = CLIPImageModel()
-emb = img_model(img)
-
-formalized_test.set_model(img_model)
+op = towhee.ops.image_embedding.timm(model_name='resnet50').get_op()
+formalized_test.set_model(op.model)
 formalized_test.set_input_shape([1,3,224,224])
 
 tfms = transforms.Compose([
@@ -46,10 +24,6 @@ tfms = transforms.Compose([
 formalized_test.set_tfms(tfms)
 formalized_test.to_onnx()
 
-def default_inference_torch(model, inp):
-    out = model.encode_image(inp)
-    return out
-
 formalized_test.inference_torch()
 
 def default_inference_onnx(session, dummy_input):
@@ -61,3 +35,5 @@ formalized_test.inference_onnx(default_inference_onnx)
 
 formalized_test.check_output()
 formalized_test.dump()
+
+
