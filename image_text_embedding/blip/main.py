@@ -9,27 +9,28 @@ from torchvision import transforms
 import torch
 from torch import nn
 
-formalized_test= FormatTest('image_text_embedding', 'clip')
+formalized_test= FormatTest('image_text_embedding', 'blip')
 formalized_test.start_eval()
 
 # our clip implementation use the jit in default which could cause the failure for onnx.
-op = towhee.ops.image_text_embedding.clip(model_name='clip_vit_b32',modality='image').get_op()
+op = towhee.ops.image_text_embedding.blip(model_name='blip_base',modality='image').get_op()
 
 #sanity check begin
 model = op.model
 img = torch.randn(1,3,224,224) 
 
-class CLIPImageModel(nn.Module):
+class BLIPImageModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = model
+        self.device = op.device
 
     def forward(self, img):
-        out = self.model.encode_image(img)
-        return out
+        caption = ''
+        image_feature = self.model(img, caption, mode='image', device=self.device)[0,0]
+        return image_feature
 #sanity check end
-ipdb.set_trace()
-img_model = CLIPImageModel()
+img_model = BLIPImageModel()
 emb = img_model(img)
 
 formalized_test.set_model(img_model)
@@ -45,6 +46,11 @@ tfms = transforms.Compose([
 
 formalized_test.set_tfms(tfms)
 formalized_test.to_onnx()
+
+def default_inference_torch(model, inp):
+    out = model(inp)
+    return out
+
 formalized_test.inference_torch()
 
 def default_inference_onnx(session, dummy_input):
