@@ -2,8 +2,8 @@ import sys
 import towhee
 
 sys.path.append('../../')
-import utils
-from utils import FormatTest, to_numpy 
+import autils
+from autils import FormatTest, to_numpy 
 from torchvision import transforms
 
 formalized_test= FormatTest('image_embedding', 'timm')

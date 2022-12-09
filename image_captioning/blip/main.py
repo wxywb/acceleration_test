@@ -3,42 +3,41 @@ import towhee
 import ipdb
 
 sys.path.append('../../')
-import autils
-from autils import FormatTest, to_numpy 
+import utils
+from utils import FormatTest, to_numpy 
 from torchvision import transforms
 import torch
 from torch import nn
 
-formalized_test= FormatTest('image_text_embedding', 'taiyi')
+formalized_test= FormatTest('image_captioning', 'blip')
 formalized_test.start_eval()
 
 # our clip implementation use the jit in default which could cause the failure for onnx.
-op = towhee.ops.image_text_embedding.taiyi(model_name='taiyi-clip-roberta-102m-chinese',modality='image').get_op()
+op = towhee.ops.image_captioning.blip(model_name='blip_base').get_op()
 
 #sanity check begin
-model = op.clip_model
-img = torch.randn(1,3,224,224) 
+model = op.model
+img = torch.randn(1,3,384,384) 
 
-class TaiyiImageModel(nn.Module):
+class CLIPImageModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = model
-        self.device = op.device
 
     def forward(self, img):
-        image_features = self.model.get_image_features(img)
-        return image_features
-
+        out = self.model.generate(img, sample=False, num_beams=3, max_length=20, min_length=5)
+        return out
 #sanity check end
-img_model = TaiyiImageModel()
+ipdb.set_trace()
+img_model = CLIPImageModel()
 emb = img_model(img)
 
 formalized_test.set_model(img_model)
-formalized_test.set_input_shape([1,3,224,224])
+formalized_test.set_input_shape([1,3,384,384])
 
 tfms = transforms.Compose([
-           transforms.Resize(224, interpolation=transforms.InterpolationMode.BICUBIC),
-           transforms.CenterCrop(224),
+           transforms.Resize(384, interpolation=transforms.InterpolationMode.BICUBIC),
+           transforms.CenterCrop(384),
            transforms.ToTensor(),
            transforms.Normalize(
               (0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
@@ -46,11 +45,6 @@ tfms = transforms.Compose([
 
 formalized_test.set_tfms(tfms)
 formalized_test.to_onnx()
-
-def default_inference_torch(model, inp):
-    out = model(inp)
-    return out
-
 formalized_test.inference_torch()
 
 def default_inference_onnx(session, dummy_input):

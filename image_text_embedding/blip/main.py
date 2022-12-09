@@ -3,8 +3,8 @@ import towhee
 import ipdb
 
 sys.path.append('../../')
-import utils
-from utils import FormatTest, to_numpy 
+import autils
+from autils import FormatTest, to_numpy 
 from torchvision import transforms
 import torch
 from torch import nn
