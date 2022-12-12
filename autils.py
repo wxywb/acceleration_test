@@ -174,6 +174,10 @@ class FormatTest():
                 p = True
                 np.testing.assert_allclose(to_numpy(tout), oout, rtol=rtol, atol=atol)
             except Exception as e:
+                import ipdb
+                ipdb.set_trace()
+                print('FAILED')
+                print(e)
                 p = False
             check_pass = check_pass and p
 
@@ -199,10 +203,14 @@ class FormatTest():
 
         rows = []
         for row in meta['records']:
-            row_data = [row[col_item] for col_item in column_names]
+            row_data = {}
+            for col_item in column_names:
+                row_data[col_item] = row[col_item]
             rows.append(row_data)
 
-        latest_row =  [self.latest_record[col_item] for col_item in column_names]
+        latest_row = {}
+        for col_item in column_names:
+            latest_row[col_item] = self.latest_record[col_item]
 
         rows.append(latest_row)
         doc.add_table(

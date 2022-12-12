@@ -1,8 +1,6 @@
 import sys
 import towhee
-import ipdb
 
-ipdb.set_trace()
 #from utils import FormatTest, to_numpy 
 def init():
     sys.path.append('../../')
@@ -13,30 +11,33 @@ FormatTest, to_numpy = init()
 
 from torchvision import transforms
 import torch
+import ipdb
 from torch import nn
 
 formalized_test= FormatTest('image_captioning', 'camel')
 formalized_test.start_eval()
 
 # our clip implementation use the jit in default which could cause the failure for onnx.
+ipdb.set_trace()
+
 op = towhee.ops.image_captioning.camel(model_name='camel_mesh').get_op()
 
 #sanity check begin
-model = op.model
+print(op.model.__dict__)
+model = op.image_model
 img = torch.randn(1,3,384,384) 
 
 class CaptionModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = model
+        self.model.eval()
 
     def forward(self, img):
-        #out = self.model.generate(img, sample=False, num_beams=3, max_length=20, min_length=5)
-        out = self.model.image_model(img)
+        out = self.model(img)
         return out
-#sanity check end
-ipdb.set_trace()
-img_model = op.image_model
+
+img_model = CaptionModel()
 emb = img_model(img)
 
 formalized_test.set_model(img_model)
