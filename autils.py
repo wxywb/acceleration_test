@@ -202,6 +202,8 @@ class FormatTest():
         column_names = ['time', 'type', 'os', 'device', 'inf_shape', 'params', 'opset', 'onnx_size', 'numerical_test', 'torch_inf_time', 'onnx_inf_time'] 
 
         rows = []
+        import ipdb
+        ipdb.set_trace()
         for row in meta['records']:
             row_data = {}
             for col_item in column_names:
@@ -213,9 +215,16 @@ class FormatTest():
             latest_row[col_item] = self.latest_record[col_item]
 
         rows.append(latest_row)
+        dump_rows =  []
+        for row in rows:
+            dump_row = []
+            for column_name in column_names:
+                dump_row.append(row[column_name])
+            dump_rows.append(dump_row)
+
         doc.add_table(
             column_names,
-            rows,
+            dump_rows,
             [Table.Align.LEFT for i in range(len(column_names))],
             0
         )
